@@ -1,0 +1,59 @@
+---
+- name: Fetch VLANs, Device IPs, and IP Address Information from phpIPAM
+  hosts: localhost
+  gather_facts: no
+  vars_files:
+    - group_vars/all.yml
+  tasks:
+    - name: Include task to fetch VLANs
+      ansible.builtin.include_tasks: roles/common/tasks/fetch_vlans.yml
+
+    - name: Include task to fetch Device IPs
+      ansible.builtin.include_tasks: roles/common/tasks/fetch_devices.yml
+
+    - name: Include task to fetch IP Address Information
+      ansible.builtin.include_tasks: roles/common/tasks/fetch_ip_info.yml
+   
+
+    - name: Include task to fetch Subnets
+      ansible.builtin.include_tasks: roles/common/tasks/fetch_subnets.yml
+        
+- name: Generate and Apply VLAN Configurations to Cisco Switch
+  hosts: cisco_switches
+  gather_facts: no
+  tasks:
+    - name: Include task to generate VLAN configurations
+      ansible.builtin.include_tasks: roles/cisco_switch/tasks/generate_vlan_config.yml
+
+    - name: Include task to push VLAN configurations
+      ansible.builtin.include_tasks: roles/cisco_switch/tasks/push_vlan_config.yml
+
+- name: Generate and Apply Configuration to Juniper Router
+  hosts: juniper_routers
+  gather_facts: no
+  tasks:
+    - name: Include task to generate Juniper configurations
+      ansible.builtin.include_tasks: roles/juniper_router/tasks/generate_juniper_config.yml
+
+    - name: Include task to push Juniper configurations
+      ansible.builtin.include_tasks: roles/juniper_router/tasks/push_juniper_config.yml
+
+- name: Generate and Apply Configuration to Cisco Router
+  hosts: cisco_routers
+  gather_facts: no
+  tasks:
+    - name: Include task to generate Cisco router configurations
+      ansible.builtin.include_tasks: roles/cisco_router/tasks/generate_cisco_router_config.yml
+
+    - name: Include task to push Cisco router configurations
+      ansible.builtin.include_tasks: roles/cisco_router/tasks/push_cisco_router_config.yml
+
+- name: Generate and Apply VLAN Configurations to Mikrotik
+  hosts: mikrotik_routers
+  gather_facts: no
+  tasks:
+    - name: Include task to generate Mikrotik configurations
+      ansible.builtin.include_tasks: roles/mikrotik/tasks/generate_mikrotik_config.yml
+
+    - name: Include task to push Mikrotik configurations
+      ansible.builtin.include_tasks: roles/mikrotik/tasks/push_mikrotik_config.yml

@@ -1,0 +1,25 @@
+---
+- name: Fetch subnets from phpIPAM
+  uri:
+    url: "{{ phpipam.api_url }}/{{ phpipam.app_id }}/subnets/"
+    method: GET
+    headers:
+      token: "{{ phpipam.token }}"
+    validate_certs: no
+    return_content: yes
+  register: subnets_response
+
+- name: Initialize filtered subnets list
+  set_fact:
+    filtered_subnets: []
+
+- name: Filter subnets matching Customer_1_*
+  loop: "{{ subnets_response.json.data }}"
+  when: "item['description'] is defined and item['description'].startswith(customer_name_prefix)"
+  set_fact:
+    filtered_subnets: "{{ filtered_subnets + [{ 'id': item['id'], 'description': item['description'], 'subnet': item['subnet'], 'mask': item['mask'] }] }}"
+
+- name: Debug Filtered Subnets
+  debug:
+    msg: "{{ filtered_subnets }}"
+

@@ -1,0 +1,28 @@
+---
+- name: Read Cisco Router configuration from file
+  slurp:
+    src: "results/cisco_router_config.txt"
+  register: cisco_config_file
+
+- name: Convert configuration to text
+  set_fact:
+    cisco_config: "{{ cisco_config_file['content'] | b64decode }}"
+
+- name: Push Configuration to Cisco Router via Telnet
+  expect:
+    command: "telnet {{ ansible_host }}"
+    responses:
+      "Username:": "{{ ansible_user }}"
+      "Password:": "{{ ansible_password }}"
+      "#": |
+        {%- for line in cisco_config.splitlines() %}
+        {{ line }}
+        {% endfor %}
+  delegate_to: localhost
+  register: telnet_output
+  ignore_errors: yes
+
+- name: Debug Telnet Output
+  debug:
+    var: telnet_output.stdout_lines
+

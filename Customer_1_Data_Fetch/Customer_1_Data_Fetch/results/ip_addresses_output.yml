@@ -1,0 +1,12 @@
+-   hostname: Customer_1_INT_BS
+    ip: 10.10.10.1
+    mask: '30'
+-   hostname: Customer_1_INT_CS
+    ip: 10.10.10.2
+    mask: '30'
+-   hostname: Customer_1_GGC_BS
+    ip: 10.10.10.5
+    mask: '30'
+-   hostname: Customer_1_GGC_CS
+    ip: 10.10.10.6
+    mask: '30'

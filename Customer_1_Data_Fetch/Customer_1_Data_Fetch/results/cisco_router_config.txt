@@ -1,0 +1,10 @@
+configure
+interface GigabitEthernet0/0/0/1.2002
+ ipv4 address 10.10.10.5/30
+ encapsulation dot1q 2002
+ description Customer_1_GGC_BS
+ commit
+ exit
+ exit
+ exit
+ exit

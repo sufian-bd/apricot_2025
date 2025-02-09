@@ -1,0 +1,33 @@
+---
+- name: Fetch VLANs from phpIPAM
+  uri:
+    url: "{{ phpipam.api_url }}/{{ phpipam.app_id }}/vlans/"
+    method: GET
+    headers:
+      token: "{{ phpipam.token }}"
+    validate_certs: no  # Skip SSL validation for self-signed certificate
+    return_content: yes
+  register: vlans_response
+
+- name: Initialize filtered VLANs list
+  set_fact:
+    filtered_vlans: []
+
+- name: Filter VLANs matching the naming convention
+  loop: "{{ vlans_response.json.data }}"
+  when: "item['name'] is defined and item['name'].startswith(customer_name_prefix)"
+  set_fact:
+    filtered_vlans: "{{ filtered_vlans + [{'id': item['id'], 'name': item['name'], 'number': item['number']}] }}"
+
+- name: Debug filtered VLANs
+  debug:
+    var: filtered_vlans
+
+- name: Save VLAN data (Name + Number) to file
+  copy:
+    content: "{{ filtered_vlans | to_nice_yaml }}"
+    dest: "results/vlans_output.yml"
+
+- name: Debug VLANs Saved
+  debug:
+    msg: "VLANs (Name & Number) saved to results/vlans_output.yml"

@@ -1,0 +1,30 @@
+---
+- name: Read VLANs from file
+  slurp:
+    src: "results/vlans_output.yml"
+  register: vlan_file
+
+- name: Convert YAML content to variable
+  set_fact:
+    filtered_vlans: "{{ vlan_file['content'] | b64decode | from_yaml }}"
+
+- name: Debug VLANs to be configured
+  debug:
+    msg: "VLANs to be configured: {{ filtered_vlans }}"
+
+- name: Generate VLAN Configuration File
+  copy:
+    content: |
+      configure terminal
+      {% for vlan in filtered_vlans %}
+      vlan {{ vlan.number }}
+      name {{ vlan.name }}_{{ vlan.number }}
+      {% endfor %}
+      end
+      write memory
+    dest: "results/vlan_config.txt"
+
+- name: Debug Generated Configuration
+  debug:
+    msg: "VLAN Configuration saved to results/vlan_config.txt"
+

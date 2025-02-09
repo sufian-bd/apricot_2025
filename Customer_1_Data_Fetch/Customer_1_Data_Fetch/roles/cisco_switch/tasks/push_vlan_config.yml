@@ -1,0 +1,18 @@
+---
+- name: Push VLAN configuration using Telnet
+  shell: |
+    ( echo "{{ ansible_user }}"; sleep 1;
+      echo "{{ ansible_password }}"; sleep 2;
+      while IFS= read -r line; do
+        echo "$line"; sleep 1;
+      done < results/vlan_config.txt
+      echo "exit"; sleep 1;
+    ) | telnet {{ ansible_host }}
+  delegate_to: localhost
+  register: telnet_output
+  ignore_errors: yes
+
+- name: Debug Telnet Output
+  debug:
+    var: telnet_output.stdout_lines
+

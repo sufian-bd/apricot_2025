@@ -1,0 +1,7 @@
+phpipam:
+  api_url: "https://10.250.240.50/api/"
+  app_id: "APITEST"
+  token: "FxgYSVBkvCtSmMgGm0Gy9Fff_dXOKBLC"
+
+customer_name_prefix: "Customer_1_"  # Prefix for filtering VLANs, devices, and IPs
+

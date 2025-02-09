@@ -1,0 +1,47 @@
+---
+- name: Read VLANs from file
+  slurp:
+    src: "results/vlans_output.yml"
+  register: vlan_file
+
+- name: Read IP addresses from file
+  slurp:
+    src: "results/ip_addresses_output.yml"
+  register: ip_file
+
+- name: Convert YAML content to variables
+  set_fact:
+    filtered_vlans: "{{ vlan_file['content'] | b64decode | from_yaml }}"
+    filtered_ips: "{{ ip_file['content'] | b64decode | from_yaml }}"
+
+- name: Filter VLANs ending with _INT
+  set_fact:
+    int_vlans: "{{ filtered_vlans | selectattr('name', 'search', '_INT$') | list }}"
+
+- name: Filter IPs ending with _INT_BS
+  set_fact:
+    int_bs_ips: "{{ filtered_ips | selectattr('hostname', 'search', '_INT_BS$') | list }}"
+
+- name: Debug VLANs and IPs
+  debug:
+    msg:
+      - "Filtered VLANs: {{ int_vlans }}"
+      - "Filtered INT_BS IPs: {{ int_bs_ips }}"
+
+- name: Generate Juniper Configuration File
+  copy:
+    content: |
+      configure
+      {% for vlan in int_vlans %}
+      {% set ip_entry = int_bs_ips | selectattr('hostname', 'equalto', vlan.name + '_BS') | first %}
+      set interfaces ge-0/0/2 unit {{ vlan.number }} vlan-id {{ vlan.number }}
+      set interfaces ge-0/0/2 unit {{ vlan.number }} description {{ ip_entry.hostname }}
+      set interfaces ge-0/0/2 unit {{ vlan.number }} family inet address {{ ip_entry.ip }}/{{ ip_entry.mask }}
+      {% endfor %}
+      commit and-quit
+    dest: "results/juniper_config.txt"
+
+- name: Debug Generated Configuration
+  debug:
+    msg: "Juniper Configuration saved to results/juniper_config.txt"
+

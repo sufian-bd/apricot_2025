@@ -1,0 +1,39 @@
+---
+- name: Read VLANs from file
+  slurp:
+    src: "results/vlans_output.yml"
+  register: vlans_file
+
+- name: Read IP addresses from file
+  slurp:
+    src: "results/ip_addresses_output.yml"
+  register: ip_file
+
+- name: Convert VLAN and IP Data
+  set_fact:
+    vlans_data: "{{ vlans_file['content'] | b64decode | from_yaml }}"
+    ip_data: "{{ ip_file['content'] | b64decode | from_yaml }}"
+
+- name: Initialize Mikrotik Configuration List
+  set_fact:
+    mikrotik_config_lines: []
+
+- name: Generate Mikrotik Configuration
+  set_fact:
+    mikrotik_config_lines: "{{ mikrotik_config_lines + [
+      '/interface vlan add interface=ether3 name=' + item.name + '_BS vlan-id=' + item.number|string,
+      '/ip address add address=' + (ip_data | selectattr('hostname', 'equalto', item.name + '_CS') | map(attribute='ip') | first | default('0.0.0.0')) + '/' +
+        (ip_data | selectattr('hostname', 'equalto', item.name + '_CS') | map(attribute='mask') | first | default('30')) + ' interface=' + item.name
+    ] }}"
+  loop: "{{ vlans_data }}"
+  when: item.name.endswith('_INT') or item.name.endswith('_GGC')
+
+- name: Save Mikrotik Configuration to File
+  copy:
+    content: "{{ mikrotik_config_lines | join('\n') }}"
+    dest: "results/mikrotik_config.txt"
+
+- name: Debug Mikrotik Configuration
+  debug:
+    msg: "{{ mikrotik_config_lines }}"
+

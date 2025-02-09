@@ -1,0 +1,28 @@
+---
+- name: Read Mikrotik Configuration from file
+  slurp:
+    src: "results/mikrotik_config.txt"
+  register: mikrotik_config_file
+
+- name: Convert configuration to text
+  set_fact:
+    mikrotik_config: "{{ mikrotik_config_file['content'] | b64decode | trim }}"
+
+- name: Push Configuration to Mikrotik via SSH
+  community.routeros.command:
+    commands: "{{ mikrotik_config.splitlines() }}"
+  vars:
+    ansible_host: "{{ inventory_hostname }}"
+    ansible_user: "admin"
+    ansible_password: "admin"
+    ansible_ssh_extra_args: "-o StrictHostKeyChecking=no"
+    ansible_connection: network_cli
+    ansible_network_os: routeros
+  delegate_to: localhost
+  register: mikrotik_output
+  ignore_errors: yes
+
+- name: Debug Mikrotik Output
+  debug:
+    var: mikrotik_output.stdout_lines
+

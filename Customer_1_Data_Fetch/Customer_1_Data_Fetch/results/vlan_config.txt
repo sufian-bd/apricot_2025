@@ -1,0 +1,9 @@
+configure terminal
+vlan 2001
+name Customer_1_INT_2001
+vlan 2002
+name Customer_1_GGC_2002
+vlan 2003
+name Customer_1_FNA_2003
+end
+write memory

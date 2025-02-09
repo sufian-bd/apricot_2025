@@ -1,0 +1,20 @@
+---
+- name: Read Juniper configuration from file
+  slurp:
+    src: "results/juniper_config.txt"
+  register: juniper_config_file
+
+- name: Convert configuration to text
+  set_fact:
+    juniper_config: "{{ juniper_config_file['content'] | b64decode }}"
+
+- name: Push Configuration to Juniper via SSH
+  ansible.netcommon.cli_command:
+    command: "{{ juniper_config }}"
+  register: juniper_output
+  delegate_to: "{{ inventory_hostname }}"
+
+- name: Debug SSH Output
+  debug:
+    msg: "{{ juniper_output.stdout_lines }}"
+

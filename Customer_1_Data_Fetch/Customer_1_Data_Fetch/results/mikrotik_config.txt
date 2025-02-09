@@ -1,0 +1,4 @@
+/interface vlan add interface=ether3 name=Customer_1_INT_BS vlan-id=2001
+/ip address add address=10.10.10.2/30 interface=Customer_1_INT
+/interface vlan add interface=ether3 name=Customer_1_GGC_BS vlan-id=2002
+/ip address add address=10.10.10.6/30 interface=Customer_1_GGC

@@ -1,0 +1,48 @@
+---
+- name: Fetch IP addresses from phpIPAM
+  uri:
+    url: "{{ phpipam.api_url }}/{{ phpipam.app_id }}/addresses/"
+    method: GET
+    headers:
+      token: "{{ phpipam.token }}"
+    validate_certs: no
+    return_content: yes
+  register: ip_response
+
+- name: Fetch subnets from phpIPAM (to get subnet masks)
+  uri:
+    url: "{{ phpipam.api_url }}/{{ phpipam.app_id }}/subnets/"
+    method: GET
+    headers:
+      token: "{{ phpipam.token }}"
+    validate_certs: no
+    return_content: yes
+  register: subnets_response
+
+- name: Initialize filtered IP list
+  set_fact:
+    filtered_ip_data: []
+
+- name: Filter IP addresses matching Customer_1_* and include subnet mask
+  loop: "{{ ip_response.json.data }}"
+  when: "item['hostname'] is defined and item['hostname'].startswith(customer_name_prefix)"
+  set_fact:
+    filtered_ip_data: "{{ filtered_ip_data + [{
+      'hostname': item['hostname'], 
+      'ip': item['ip'], 
+      'mask': (subnets_response.json.data | selectattr('id', 'equalto', item['subnetId']) | map(attribute='mask') | first | default('Unknown'))
+    }] }}"
+    
+- name: Debug Filtered IP Addresses with Subnet Mask
+  debug:
+    msg: "{{ filtered_ip_data }}"
+
+- name: Save IP data (Hostname + IP + Mask) to file
+  copy:
+    content: "{{ filtered_ip_data | to_nice_yaml }}"
+    dest: "results/ip_addresses_output.yml"
+
+- name: Debug IP Data Saved
+  debug:
+    msg: "IP addresses with subnet masks saved to results/ip_addresses_output.yml"
+

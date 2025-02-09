@@ -1,0 +1,9 @@
+[mikrotik_routers]
+20.20.20.18
+
+[mikrotik_routers:vars]
+ansible_user=admin
+ansible_password=admin
+ansible_network_os=community.routeros.routeros
+ansible_connection=network_cli
+

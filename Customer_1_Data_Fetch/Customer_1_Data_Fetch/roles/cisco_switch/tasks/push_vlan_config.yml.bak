@@ -1,0 +1,31 @@
+---
+- name: Push VLAN configuration using Telnet (Single Session)
+  ansible.builtin.expect:
+    command: "telnet {{ ansible_host }}"
+    responses:
+      "Username:": "{{ ansible_user }}"
+      "Password:": "{{ ansible_password }}"
+      ">": "enable"
+      "#": "configure terminal"
+  delegate_to: localhost
+
+- name: Configure VLANs via Telnet
+  ansible.builtin.expect:
+    command: "telnet {{ ansible_host }}"
+    responses:
+      "Username:": "{{ ansible_user }}"
+      "Password:": "{{ ansible_password }}"
+      ">": "enable"
+      "#": |
+        {% for vlan in filtered_vlans %}
+        vlan {{ vlan.number }}
+        name {{ vlan.name }}
+        {% endfor %}
+        end
+        write memory
+  delegate_to: localhost
+  when: filtered_vlans | length > 0
+
+- name: Debug Confirmation
+  debug:
+    msg: "Successfully created VLANs: {{ filtered_vlans }}"

@@ -1,0 +1,8 @@
+cisco_routers:
+  hosts:
+    cisco_router_1:
+      ansible_host: 20.20.20.6
+      ansible_connection: local
+      ansible_user: cisco
+      ansible_password: cisco
+

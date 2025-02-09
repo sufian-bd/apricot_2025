@@ -1,0 +1,52 @@
+---
+- name: Read VLANs from file
+  slurp:
+    src: "results/vlans_output.yml"
+  register: vlan_file
+
+- name: Read IP addresses from file
+  slurp:
+    src: "results/ip_addresses_output.yml"
+  register: ip_file
+
+- name: Convert YAML content to variables
+  set_fact:
+    filtered_vlans: "{{ vlan_file['content'] | b64decode | from_yaml }}"
+    filtered_ips: "{{ ip_file['content'] | b64decode | from_yaml }}"
+
+- name: Filter VLANs ending with _GGC
+  set_fact:
+    ggc_vlans: "{{ filtered_vlans | selectattr('name', 'search', '_GGC$') | list }}"
+
+- name: Filter IPs ending with _GGC_BS
+  set_fact:
+    ggc_bs_ips: "{{ filtered_ips | selectattr('hostname', 'search', '_GGC_BS$') | list }}"
+
+- name: Debug VLANs and IPs
+  debug:
+    msg:
+      - "Filtered VLANs: {{ ggc_vlans }}"
+      - "Filtered GGC_BS IPs: {{ ggc_bs_ips }}"
+
+- name: Generate Cisco Router Configuration File
+  copy:
+    content: |
+      configure
+      {% for vlan in ggc_vlans %}
+      {% set ip_entry = ggc_bs_ips | selectattr('hostname', 'equalto', vlan.name + '_BS') | first %}
+      interface GigabitEthernet0/0/0/1.{{ vlan.number }}
+       ipv4 address {{ ip_entry.ip }}/{{ ip_entry.mask }}
+       encapsulation dot1q {{ vlan.number }}
+       description {{ ip_entry.hostname }}
+       commit
+       exit
+       exit
+      {% endfor %}
+       exit
+       exit
+    dest: "results/cisco_router_config.txt"
+
+- name: Debug Generated Configuration
+  debug:
+    msg: "Cisco Router Configuration saved to results/cisco_router_config.txt"
+

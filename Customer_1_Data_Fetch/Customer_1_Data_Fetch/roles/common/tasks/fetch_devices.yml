@@ -1,0 +1,25 @@
+---
+- name: Fetch devices from phpIPAM
+  uri:
+    url: "{{ phpipam.api_url }}/{{ phpipam.app_id }}/devices/"
+    method: GET
+    headers:
+      token: "{{ phpipam.token }}"
+    validate_certs: no
+    return_content: yes
+  register: devices_response
+
+- name: Initialize filtered device list
+  set_fact:
+    filtered_devices: []
+
+- name: Filter Devices matching Customer_1_*
+  loop: "{{ devices_response.json.data }}"
+  when: "item['hostname'] is defined and item['hostname'].startswith(customer_name_prefix)"
+  set_fact:
+    filtered_devices: "{{ filtered_devices + [{ 'id': item['id'], 'hostname': item['hostname'], 'ip': item['ip'] }] }}"
+
+- name: Debug Filtered Devices
+  debug:
+    msg: "Filtered Devices: {{ filtered_devices }}"
+

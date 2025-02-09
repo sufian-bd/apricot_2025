@@ -1,0 +1,42 @@
+---
+- name: Mikrotik Bulk Update
+  hosts: localhost
+  vars:
+    phpipam:
+      api_url: "https://10.250.240.50/api/"
+      app_id: "APITEST"
+      token: "FxgYSVBkvCtSmMgGm0Gy9Fff_dXOKBLC"
+  tasks:
+    - name: Fetch device data from PHPIPAM
+      uri:
+        url: "{{ phpipam.api_url }}/{{ phpipam.app_id }}/devices/"
+        method: GET
+        headers:
+          token: "{{ phpipam.token }}"
+        validate_certs: no
+        return_content: yes
+      register: phpipam_devices
+
+    - name: Extract Mikrotik IPs by device_type
+      vars:
+        filter_name_prefix: [2]
+      set_fact:
+        mikrotik_ips: >-
+          {{ phpipam_devices.json.data | selectattr('type', 'equalto', 10)
+          | map(attribute='ip') 
+          | list }}
+
+    - name: Debug filtered Mikrotik IPs
+      debug:
+        var: mikrotik_ips
+
+    - name: Fail if no Mikrotik devices match the hostname filter
+      fail:
+        msg: "No Mikrotik devices matched the specified hostname filter."
+      when: mikrotik_ips | length == 0
+
+    - name: Add simple queue on each filtered Mikrotik device
+      ansible.builtin.include_tasks: simple_queue_add.yml
+      loop: "{{ mikrotik_ips }}"
+      loop_control:
+        label: "{{ item }}"

@@ -1,0 +1,13 @@
+---
+- name: Read VLANs from file
+  slurp:
+    src: "results/vlans_output.yml"
+  register: vlan_file
+
+- name: Convert YAML content to variable
+  set_fact:
+    filtered_vlans: "{{ vlan_file['content'] | b64decode | from_yaml }}"
+
+- name: Debug VLANs to be configured
+  debug:
+    msg: "VLANs to be configured: {{ filtered_vlans }}"
